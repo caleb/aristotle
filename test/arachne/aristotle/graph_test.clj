@@ -14,9 +14,9 @@
   (let [data [{:rdf/about :test/jane
                :foaf/name "Jane"
                :foaf/knows [{:rdf/about :test/bill
-                             :arachne/name "Bill"}
+                             :foaf/name "Bill"}
                             {:rdf/about :test/nicole
-                             :arachne/name "Nicole"}]}]
+                             :foaf/name "Nicole"}]}]
         triples (graph/triples data)]
     (is (= 5 (count triples)))))
 
@@ -36,6 +36,53 @@
       '[?p]
       '[:bgp [?p :foaf/name ?name]]
       {'?name name})))
+
+(deftest multiple-values-test
+  (let [data [{:rdf/about :ex/ada
+               :foaf/name "Ada 1"}
+              {:rdf/about :ex/ada
+               :foaf/name "Ada 2"}]]
+    (is (= #{["Ada 1"] ["Ada 2"]}
+           (q/run
+            (ar/add (ar/graph :simple) data)
+            '[?name]
+            '[:bgp [:ex/ada :foaf/name ?name]])))))
+
+(deftest delete-tuple-test
+  (let [data [{:rdf/about :ex/ada
+               :foaf/name "Ada 1"
+               :foaf/age 6}
+              {:rdf/about :ex/ada
+               :foaf/name "Ada 2"
+               :foaf/age 7}]]
+    (is (= #{["Ada 1" 6]}
+           (q/run
+            (-> (ar/graph :simple)
+                (ar/add data)
+                (ar/delete [[:ex/ada :foaf/name "Ada 2"]
+                            [:ex/ada :foaf/age 7]]))
+            '[?name ?age]
+            '[:bgp [:ex/ada :foaf/name ?name]
+                   [:ex/ada :foaf/age ?age]])))))
+
+(deftest delete-graph-test
+  (let [remove-data [{:rdf/about :ex/ada
+                      :foaf/name "Ada 2"
+                      :foaf/age 7}]
+        data [{:rdf/about :ex/ada
+               :foaf/name "Ada 1"
+               :foaf/age 6}
+              {:rdf/about :ex/ada
+               :foaf/name "Ada 2"
+               :foaf/age 7}]]
+    (is (= #{["Ada 1" 6]}
+           (q/run
+            (-> (ar/graph :simple)
+                (ar/add data)
+                (ar/delete (ar/add (ar/graph :simple) remove-data)))
+            '[?name ?age]
+            '[:bgp [:ex/ada :foaf/name ?name]
+              [:ex/ada :foaf/age ?age]])))))
 
 (deftest inline-prefix-test
   (let [str "[#rdf/prefix [:foo \"http://foo.com/#\"]

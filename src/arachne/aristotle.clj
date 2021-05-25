@@ -55,6 +55,16 @@
     (GraphUtil/add ^Graph graph ^java.util.List (g/triples data)))
   graph)
 
+(defn delete
+  "Delete the given data from a graph, returning the graph. Data must satisfy
+  arachne.aristotle.graph/AsTriples. If the data is a Graph it will be
+  removed directly."
+  [graph data]
+  (if (instance? Graph data)
+    (GraphUtil/deleteFrom ^Graph graph ^Graph data)
+    (GraphUtil/delete ^Graph graph ^java.util.List (g/triples data)))
+  graph)
+
 (defn read
   "Load a file containing serialized RDF data into a graph, returning
   the graph. The file may be specified using:
